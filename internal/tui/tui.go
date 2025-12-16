@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -167,6 +168,14 @@ func (m Model) handleSelectAction(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.textInput.Focus()
 		m.state = stateCustomPath
 		return m, textinput.Blink
+	case "f":
+		// Reveal in Finder
+		m.performRevealInFinder()
+		return m, nil
+	case "o":
+		// Open files
+		m.performOpenFiles()
+		return m, nil
 	default:
 		// Handle move to file's directory: 1-9, 0, a-z
 		idx := -1
@@ -290,6 +299,62 @@ func (m *Model) performMove(destDir string) {
 	m.nextGroup()
 }
 
+func (m *Model) performRevealInFinder() {
+	group := m.groups[m.currentGroup]
+	count := 0
+
+	for idx := range m.selected {
+		file := group.Files[idx]
+		if m.dryRun {
+			m.message = fmt.Sprintf("[DRY-RUN] Would reveal in Finder: %s", file.Path)
+		} else {
+			if err := revealInFinder(file.Path); err != nil {
+				m.err = err
+				return
+			}
+			count++
+		}
+	}
+
+	if !m.dryRun {
+		word := "file"
+		if count > 1 {
+			word = "files"
+		}
+		m.message = successStyle.Render(fmt.Sprintf("Revealed %d %s in Finder", count, word))
+	}
+	m.selected = make(map[int]bool)
+	m.state = stateSelectFiles
+}
+
+func (m *Model) performOpenFiles() {
+	group := m.groups[m.currentGroup]
+	count := 0
+
+	for idx := range m.selected {
+		file := group.Files[idx]
+		if m.dryRun {
+			m.message = fmt.Sprintf("[DRY-RUN] Would open: %s", file.Path)
+		} else {
+			if err := openFile(file.Path); err != nil {
+				m.err = err
+				return
+			}
+			count++
+		}
+	}
+
+	if !m.dryRun {
+		word := "file"
+		if count > 1 {
+			word = "files"
+		}
+		m.message = successStyle.Render(fmt.Sprintf("Opened %d %s", count, word))
+	}
+	m.selected = make(map[int]bool)
+	m.state = stateSelectFiles
+}
+
 func (m *Model) nextGroup() {
 	m.currentGroup++
 	m.selected = make(map[int]bool)
@@ -354,6 +419,10 @@ func (m Model) View() string {
 		b.WriteString("\n")
 		b.WriteString(helpStyle.Render("  [d] Delete"))
 		b.WriteString("\n")
+		b.WriteString(helpStyle.Render("  [f] Reveal in Finder"))
+		b.WriteString("\n")
+		b.WriteString(helpStyle.Render("  [o] Open file"))
+		b.WriteString("\n")
 		b.WriteString(helpStyle.Render("  [s] Skip"))
 		b.WriteString("\n")
 		b.WriteString(helpStyle.Render("  [q] Quit"))
@@ -417,6 +486,30 @@ func moveToTrash(path string) error {
 
 	destPath := filepath.Join(trashDir, filepath.Base(path))
 	return os.Rename(path, destPath)
+}
+
+func revealInFinder(path string) error {
+	switch runtime.GOOS {
+	case "darwin":
+		return exec.Command("open", "-R", path).Run()
+	case "linux":
+		// Use xdg-open on the directory
+		dir := filepath.Dir(path)
+		return exec.Command("xdg-open", dir).Run()
+	default:
+		return fmt.Errorf("reveal in finder not supported on %s", runtime.GOOS)
+	}
+}
+
+func openFile(path string) error {
+	switch runtime.GOOS {
+	case "darwin":
+		return exec.Command("open", path).Run()
+	case "linux":
+		return exec.Command("xdg-open", path).Run()
+	default:
+		return fmt.Errorf("open file not supported on %s", runtime.GOOS)
+	}
 }
 
 // Run starts the TUI.
