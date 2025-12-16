@@ -16,7 +16,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:     "fdup",
 	Short:   "File duplicate finder based on filename patterns",
-	Version: fmt.Sprintf("%s (spec: v%s)", version.Version, version.SpecVersion),
+	Version: version.Version,
 	Long: `fdup extracts IDs/codes from filenames using regex patterns,
 indexes them in SQLite, and detects duplicates across directories.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -30,7 +30,7 @@ indexes them in SQLite, and detects duplicates across directories.`,
 }
 
 func printBanner() {
-	fmt.Fprintf(os.Stderr, "fdup v%s (spec: v%s)\n", version.Version, version.SpecVersion)
+	fmt.Fprintf(os.Stderr, "fdup v%s\n", version.Version)
 }
 
 func Execute() {

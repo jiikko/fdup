@@ -21,19 +21,118 @@ go install github.com/jiikko/fdup@latest
 
 ## コマンド
 
-| コマンド | 説明 |
-|---------|------|
-| `fdup init` | 初期化（`.fdup/`ディレクトリ作成） |
-| `fdup scan` | ファイルをスキャンしてインデックス化 |
-| `fdup dup` | 重複ファイルを一覧表示 |
-| `fdup search <CODE>` | コードでファイルを検索 |
-| `fdup test` | パターンのテスト実行 |
+### グローバルオプション
+
+すべてのコマンドで使用可能なオプション:
+
+| オプション | 説明 |
+|-----------|------|
+| `-q, --quiet` | 出力を抑制 |
+| `--verbose` | 詳細な出力を表示 |
+
+### `fdup init`
+
+カレントディレクトリに`.fdup/`を作成し、初期化します。
+
+```bash
+fdup init [options]
+```
+
+| オプション | 説明 |
+|-----------|------|
+| `-f, --force` | 既存データを削除して再初期化 |
+
+### `fdup scan`
+
+ファイルをスキャンしてインデックスを更新します。
+
+```bash
+fdup scan [options]
+```
+
+| オプション | 説明 |
+|-----------|------|
+| `-p, --progress` | プログレスバーを表示 |
+| `-d, --drop` | データベースを削除して再作成 |
+
+### `fdup dup`
+
+重複ファイルを検出・一覧表示します。
+
+```bash
+fdup dup [options]
+```
+
+| オプション | 説明 |
+|-----------|------|
+| `-i, --interactive` | TUIモードで対話的に操作 |
+| `-n, --dry-run` | 実際には変更せず、実行内容を表示 |
+| `-t, --trash` | 削除ではなくゴミ箱に移動 |
+| `-w, --web` | Web UIモードで起動 |
+
+### `fdup test`
+
+`config.yaml`に定義されたテストケースでパターンを検証します。
+
+```bash
+fdup test
+```
+
+### `fdup search <CODE>` (非推奨)
+
+> **Warning**: このコマンドは非推奨です。将来のバージョンで削除予定です。
+
+コードでファイルを検索します。
+
+```bash
+fdup search <CODE> [options]
+```
+
+| オプション | 説明 |
+|-----------|------|
+| `-e, --exact` | 完全一致のみ |
+| `-j, --json` | JSON形式で出力 |
 
 ## 技術スタック
 
 - Go
 - SQLite (modernc.org/sqlite)
 - Bubble Tea / Lipgloss
+
+## 開発
+
+### テスト用ディレクトリのセットアップ
+
+```bash
+make setup-test-dir
+```
+
+`./tmp` 以下にテスト用のファイルと設定が作成されます。
+
+```bash
+cd ./tmp
+../fdup scan
+../fdup dup
+../fdup dup --web
+```
+
+テスト終了後のクリーンアップ:
+
+```bash
+make clean-test-dir
+```
+
+### テスト実行
+
+```bash
+make test
+```
+
+### Lint
+
+```bash
+make lint
+```
 
 ## ライセンス
 

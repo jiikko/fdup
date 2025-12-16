@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	"github.com/jiikko/fdup/internal/code"
+	"github.com/jiikko/fdup/internal/db"
 )
 
-func (s *Server) renderHTML() string {
+func (s *Server) renderHTML(duplicateGroups []db.DuplicateGroup, currentPage, totalPages, totalGroups int) string {
 	var groups strings.Builder
-	for i, group := range s.groups {
+	for i, group := range duplicateGroups {
 		groups.WriteString(fmt.Sprintf(`
 		<div class="group" id="group-%d">
 			<h2>%s <span class="count">%d files</span></h2>
@@ -181,6 +182,31 @@ func (s *Server) renderHTML() string {
 			color: #666;
 			margin-bottom: 20px;
 		}
+		.pagination {
+			display: flex;
+			justify-content: center;
+			gap: 5px;
+			margin: 20px 0;
+		}
+		.pagination a, .pagination span {
+			padding: 8px 12px;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			text-decoration: none;
+			color: #333;
+		}
+		.pagination a:hover {
+			background: #f0f0f0;
+		}
+		.pagination .current {
+			background: #007bff;
+			color: white;
+			border-color: #007bff;
+		}
+		.pagination .disabled {
+			color: #999;
+			cursor: not-allowed;
+		}
 	</style>
 </head>
 <body>
@@ -188,7 +214,8 @@ func (s *Server) renderHTML() string {
 		<h1>fdup - Duplicate Files</h1>
 		<button class="shutdown-btn" onclick="shutdown()">Shutdown Server</button>
 	</header>
-	<p class="summary">Found %d duplicate groups</p>
+	<p class="summary">Found %d duplicate groups (showing page %d of %d)</p>
+	%s
 	%s
 	<div id="toast" class="toast"></div>
 	<script>
@@ -262,7 +289,44 @@ func (s *Server) renderHTML() string {
 		}
 	</script>
 </body>
-</html>`, len(s.groups), groups.String())
+</html>`, totalGroups, currentPage, totalPages, groups.String(), renderPagination(currentPage, totalPages))
+}
+
+func renderPagination(currentPage, totalPages int) string {
+	if totalPages <= 1 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString(`<div class="pagination">`)
+
+	// Previous
+	if currentPage > 1 {
+		b.WriteString(fmt.Sprintf(`<a href="?page=%d">&laquo; Prev</a>`, currentPage-1))
+	} else {
+		b.WriteString(`<span class="disabled">&laquo; Prev</span>`)
+	}
+
+	// Page numbers
+	for i := 1; i <= totalPages; i++ {
+		if i == currentPage {
+			b.WriteString(fmt.Sprintf(`<span class="current">%d</span>`, i))
+		} else if i == 1 || i == totalPages || (i >= currentPage-2 && i <= currentPage+2) {
+			b.WriteString(fmt.Sprintf(`<a href="?page=%d">%d</a>`, i, i))
+		} else if i == currentPage-3 || i == currentPage+3 {
+			b.WriteString(`<span>...</span>`)
+		}
+	}
+
+	// Next
+	if currentPage < totalPages {
+		b.WriteString(fmt.Sprintf(`<a href="?page=%d">Next &raquo;</a>`, currentPage+1))
+	} else {
+		b.WriteString(`<span class="disabled">Next &raquo;</span>`)
+	}
+
+	b.WriteString(`</div>`)
+	return b.String()
 }
 
 func escapeHTML(s string) string {

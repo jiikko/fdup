@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -19,7 +20,6 @@ import (
 
 // Server holds the web server state.
 type Server struct {
-	groups   []db.DuplicateGroup
 	database *db.DB
 	server   *http.Server
 	port     int
@@ -27,8 +27,8 @@ type Server struct {
 
 // Run starts the web server and opens the browser.
 func Run(groups []db.DuplicateGroup, database *db.DB) error {
+	_ = groups // Initial groups ignored; we fetch fresh data on each request
 	s := &Server{
-		groups:   groups,
 		database: database,
 	}
 
@@ -109,13 +109,49 @@ func openBrowser(url string) {
 	_ = cmd.Start()
 }
 
+const perPage = 20
+
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
+
+	// Fetch fresh data from database
+	allGroups, err := s.database.FindDuplicates()
+	if err != nil {
+		http.Error(w, "Failed to fetch duplicates", http.StatusInternalServerError)
+		return
+	}
+
+	// Parse page parameter
+	page := 1
+	if p := r.URL.Query().Get("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+
+	// Calculate pagination
+	totalGroups := len(allGroups)
+	totalPages := (totalGroups + perPage - 1) / perPage
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	if page > totalPages {
+		page = totalPages
+	}
+
+	start := (page - 1) * perPage
+	end := start + perPage
+	if end > totalGroups {
+		end = totalGroups
+	}
+
+	pageGroups := allGroups[start:end]
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(s.renderHTML()))
+	w.Write([]byte(s.renderHTML(pageGroups, page, totalPages, totalGroups)))
 }
 
 func (s *Server) handleOpen(w http.ResponseWriter, r *http.Request) {
@@ -186,6 +222,7 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		_ = s.database.DeleteFile(req.Path)
 	}
 
+	fmt.Printf("[DELETE] Moved to trash: %s\n", req.Path)
 	jsonSuccess(w, "Moved to trash")
 }
 
