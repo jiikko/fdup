@@ -6,11 +6,12 @@ import (
 	"unicode"
 )
 
-// Normalize normalizes a code by uppercasing and removing hyphens.
-// Example: "prj-001" -> "PRJ001"
+// Normalize normalizes a code by uppercasing and removing hyphens and underscores.
+// Example: "prj-001" -> "PRJ001", "hoge_9851" -> "HOGE9851"
 func Normalize(code string) string {
 	upper := strings.ToUpper(code)
-	return strings.ReplaceAll(upper, "-", "")
+	upper = strings.ReplaceAll(upper, "-", "")
+	return strings.ReplaceAll(upper, "_", "")
 }
 
 // Format formats a normalized code for display by inserting a hyphen
