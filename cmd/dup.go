@@ -92,10 +92,23 @@ func runDup(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Printf("%s: %d %s\n", code.Format(group.Code), len(group.Files), fileWord)
 		for _, f := range group.Files {
-			fmt.Printf("  %s\n", f.Path)
+			fmt.Printf("  %s (%s)\n", f.Path, formatSize(f.Size))
 		}
 		fmt.Println()
 	}
 
 	return nil
+}
+
+func formatSize(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
