@@ -1,4 +1,4 @@
-module github.com/koji/fdup
+module github.com/jiikko/fdup
 
 go 1.24.4
 

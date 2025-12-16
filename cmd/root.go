@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/koji/fdup/internal/version"
+	"github.com/jiikko/fdup/internal/version"
 	"github.com/spf13/cobra"
 )
 

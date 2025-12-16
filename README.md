@@ -16,7 +16,7 @@
 ## インストール
 
 ```bash
-go install github.com/koji/fdup@latest
+go install github.com/jiikko/fdup@latest
 ```
 
 ## コマンド

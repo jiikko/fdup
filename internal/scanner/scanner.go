@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/koji/fdup/internal/code"
-	"github.com/koji/fdup/internal/db"
+	"github.com/jiikko/fdup/internal/code"
+	"github.com/jiikko/fdup/internal/db"
 )
 
 // Scanner scans directories for files matching patterns.

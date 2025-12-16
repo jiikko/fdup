@@ -10,8 +10,8 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/koji/fdup/internal/code"
-	"github.com/koji/fdup/internal/db"
+	"github.com/jiikko/fdup/internal/code"
+	"github.com/jiikko/fdup/internal/db"
 )
 
 var (

@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/koji/fdup/internal/config"
-	"github.com/koji/fdup/internal/db"
+	"github.com/jiikko/fdup/internal/config"
+	"github.com/jiikko/fdup/internal/db"
 	"github.com/spf13/cobra"
 )
 

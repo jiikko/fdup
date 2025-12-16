@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/koji/fdup/internal/config"
-	"github.com/koji/fdup/internal/scanner"
+	"github.com/jiikko/fdup/internal/config"
+	"github.com/jiikko/fdup/internal/scanner"
 	"github.com/spf13/cobra"
 )
 

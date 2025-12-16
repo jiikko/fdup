@@ -1,6 +1,6 @@
 package main
 
-import "github.com/koji/fdup/cmd"
+import "github.com/jiikko/fdup/cmd"
 
 func main() {
 	cmd.Execute()
