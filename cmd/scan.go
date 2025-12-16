@@ -11,7 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var showProgress bool
+var (
+	showProgress bool
+	dropDB       bool
+)
 
 var scanCmd = &cobra.Command{
 	Use:   "scan",
@@ -22,6 +25,7 @@ var scanCmd = &cobra.Command{
 
 func init() {
 	scanCmd.Flags().BoolVarP(&showProgress, "progress", "p", false, "Show progress bar")
+	scanCmd.Flags().BoolVarP(&dropDB, "drop", "d", false, "Drop and recreate database")
 }
 
 func runScan(cmd *cobra.Command, args []string) error {
@@ -41,12 +45,30 @@ func runScan(cmd *cobra.Command, args []string) error {
 
 	// Open database
 	dbPath := filepath.Join(configDir, config.DBFile)
+
+	// Drop and recreate database if requested
+	if dropDB {
+		if !quiet {
+			fmt.Println("Dropping database...")
+		}
+		if err := os.Remove(dbPath); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove database: %w", err)
+		}
+	}
+
 	database, err := db.Open(dbPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error: failed to open database:", err)
 		os.Exit(4)
 	}
 	defer func() { _ = database.Close() }()
+
+	// Initialize tables if dropped or new
+	if dropDB {
+		if err := database.Initialize(); err != nil {
+			return fmt.Errorf("failed to initialize database: %w", err)
+		}
+	}
 
 	if !quiet {
 		fmt.Println("Clearing index...")
