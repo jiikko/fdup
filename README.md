@@ -93,6 +93,137 @@ fdup search <CODE> [options]
 | `-e, --exact` | 完全一致のみ |
 | `-j, --json` | JSON形式で出力 |
 
+## 設定ファイル (config.yaml)
+
+`fdup init`を実行すると`.fdup/config.yaml`が作成されます。
+
+### 構造
+
+```yaml
+patterns:
+  - name: パターン名
+    regex: 正規表現パターン
+ignore:
+  - 無視パターン
+test:
+  - input: テスト入力
+    expected: 期待される出力
+```
+
+### patterns
+
+ファイル名からコードを抽出するための正規表現パターンを定義します。
+
+```yaml
+patterns:
+  - name: standard
+    regex: '([A-Z]{2,5}-\d{3,5})'
+  - name: no_hyphen
+    regex: '([A-Z]{2,5})(\d{3,5})'
+```
+
+| フィールド | 説明 |
+|-----------|------|
+| `name` | パターンの識別名（ログ出力用） |
+| `regex` | 正規表現パターン（キャプチャグループ必須） |
+
+**正規表現の仕様:**
+
+- **大文字小文字を区別しない** - 自動的に`(?i)`フラグが付与される
+- **キャプチャグループ必須** - `()`で囲んだ部分がコードとして抽出される
+- **複数キャプチャグループ** - 複数のグループがある場合は結合される
+- **パターンは順番に評価** - 最初にマッチしたパターンが使用される
+
+**コードの正規化:**
+
+抽出されたコードは以下のルールで正規化されます:
+
+1. 大文字に変換
+2. ハイフン（`-`）を削除
+3. アンダースコア（`_`）を削除
+
+例: `prj-001` → `PRJ001`, `hoge_9851` → `HOGE9851`
+
+### ignore
+
+スキャン対象から除外するパスのパターンを定義します。
+
+```yaml
+ignore:
+  - node_modules/
+  - .git/
+  - "*.tmp"
+  - "*.log"
+  - .DS_Store
+  - .fdup/
+```
+
+**パターンの種類:**
+
+| パターン | 説明 | 例 |
+|---------|------|----|
+| `dir/` | 末尾が`/`の場合、ディレクトリ名にマッチ | `node_modules/` |
+| `*.ext` | ワイルドカード（`*`）でglob形式マッチ | `*.tmp`, `*.log` |
+| `name` | 完全一致（ファイル名・パス要素にマッチ） | `.DS_Store` |
+
+**マッチング動作:**
+
+- 相対パス全体に対してマッチ
+- ファイル名単体に対してマッチ
+- パスの各要素に対してマッチ
+- ディレクトリがマッチした場合、その配下は再帰的にスキップ
+
+### test
+
+`fdup test`コマンドで使用するテストケースを定義します。
+
+```yaml
+test:
+  - input: PRJ-001_final.zip
+    expected: PRJ001
+  - input: doc123.pdf
+    expected: DOC123
+  - input: random_file.txt
+    expected: null  # マッチしないことを期待
+```
+
+| フィールド | 説明 |
+|-----------|------|
+| `input` | テスト対象のファイル名 |
+| `expected` | 期待される正規化後のコード。`null`の場合はマッチしないことを期待 |
+
+### 設定例
+
+```yaml
+# カメラの連番ファイル向け設定
+patterns:
+  - name: sony
+    regex: '(DSC\d{5})'
+  - name: canon
+    regex: '(IMG_\d{4})'
+  - name: gopro
+    regex: '(GOPR\d{4})'
+  - name: dji
+    regex: '(DJI_\d{4})'
+
+ignore:
+  - .git/
+  - .fdup/
+  - "*.tmp"
+  - Thumbs.db
+  - .DS_Store
+
+test:
+  - input: DSC00001.ARW
+    expected: DSC00001
+  - input: IMG_1234.CR2
+    expected: IMG1234
+  - input: GOPR0001.MP4
+    expected: GOPR0001
+  - input: screenshot.png
+    expected: null
+```
+
 ## 技術スタック
 
 - Go
