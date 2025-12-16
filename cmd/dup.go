@@ -9,6 +9,7 @@ import (
 	"github.com/jiikko/fdup/internal/config"
 	"github.com/jiikko/fdup/internal/db"
 	"github.com/jiikko/fdup/internal/tui"
+	"github.com/jiikko/fdup/internal/web"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +17,7 @@ var (
 	interactive bool
 	dryRun      bool
 	useTrash    bool
+	webMode     bool
 )
 
 var dupCmd = &cobra.Command{
@@ -29,6 +31,7 @@ func init() {
 	dupCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Interactive TUI mode")
 	dupCmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Show what would be done without making changes")
 	dupCmd.Flags().BoolVarP(&useTrash, "trash", "t", false, "Move to trash instead of deleting")
+	dupCmd.Flags().BoolVarP(&webMode, "web", "w", false, "Web UI mode")
 }
 
 func runDup(cmd *cobra.Command, args []string) error {
@@ -82,6 +85,10 @@ func runDup(cmd *cobra.Command, args []string) error {
 
 	if interactive {
 		return tui.Run(groups, database, dryRun, useTrash)
+	}
+
+	if webMode {
+		return web.Run(groups, database)
 	}
 
 	// Basic text output
